@@ -204,4 +204,35 @@ const deleteDeposit = async (req, res) => {
     }
 };
 
-module.exports = { getAllUsers, getPendingDeposits, approveDeposit, deleteDeposit };
+const updateUserStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+
+        if (!['ACTIVE', 'BLOCKED'].includes(status)) {
+            return res.status(400).json({ success: false, message: 'Invalid status' });
+        }
+
+        const user = await prisma.user.findUnique({ where: { id } });
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        if (user.role === 'ADMIN') {
+            return res.status(403).json({ success: false, message: 'Cannot change status of an admin user' });
+        }
+
+        const updatedUser = await prisma.user.update({
+            where: { id },
+            data: { status }
+        });
+
+        res.json({ success: true, message: `User status changed to ${status}`, data: updatedUser });
+    } catch (error) {
+        console.error('Update User Status Error:', error);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
+module.exports = { getAllUsers, getPendingDeposits, approveDeposit, deleteDeposit, updateUserStatus };
