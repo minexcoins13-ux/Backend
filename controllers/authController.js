@@ -57,13 +57,10 @@ const registerUser = async (req, res) => {
             ]
         });
 
-        // Send Welcome Email
-        try {
-            await sendWelcomeEmail(user.email, user.name);
-        } catch (emailError) {
-            console.error('Failed to send welcome email (registration succeeded):', emailError);
-            // Ensure this error doesn't break the registration response.
-        }
+        // Send Welcome Email in the background so it doesn't delay/block registration response
+        sendWelcomeEmail(user.email, user.name).catch(err => {
+            console.error('Background welcome email error:', err);
+        });
 
         res.status(201).json({
             success: true,
