@@ -2,6 +2,7 @@ const prisma = require('../utils/prisma');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { generateToken, generateRefreshToken, generateReferralCode } = require('../utils/generateToken');
+const { sendWelcomeEmail } = require('../utils/sendEmail');
 
 // @desc    Register a new user
 // @route   POST /api/auth/register
@@ -55,6 +56,14 @@ const registerUser = async (req, res) => {
                 { user_id: user.id, currency: 'ETH', balance: 0.0 }
             ]
         });
+
+        // Send Welcome Email
+        try {
+            await sendWelcomeEmail(user.email, user.name);
+        } catch (emailError) {
+            console.error('Failed to send welcome email (registration succeeded):', emailError);
+            // Ensure this error doesn't break the registration response.
+        }
 
         res.status(201).json({
             success: true,
