@@ -84,14 +84,18 @@ const registerUser = async (req, res) => {
 // @route   POST /api/auth/login
 // @access  Public
 const loginUser = async (req, res) => {
+    console.log('[loginUser] Request received for email:', req.body?.email);
     try {
         const { email, password } = req.body;
 
+        console.log('[loginUser] Calling prisma.user.findUnique...');
         const user = await prisma.user.findUnique({
             where: { email }
         });
+        console.log('[loginUser] Prisma returned user:', user ? user.id : null);
 
         if (user && (await bcrypt.compare(password, user.password))) {
+            console.log('[loginUser] Password matched for user:', user.id);
             if (user.status === 'BLOCKED') {
                 return res.status(403).json({ success: false, message: 'Account is blocked' });
             }
@@ -108,10 +112,11 @@ const loginUser = async (req, res) => {
                 }
             });
         } else {
+            console.log('[loginUser] Invalid credentials');
             res.status(401).json({ success: false, message: 'Invalid email or password' });
         }
     } catch (error) {
-        console.error("Login Error Object:", error);
+        console.error("[loginUser] Login Error Object:", error);
         res.status(500).json({ success: false, message: 'Server Error Full: ' + JSON.stringify(error, Object.getOwnPropertyNames(error)) });
     }
 };
