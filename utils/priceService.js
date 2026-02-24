@@ -4,7 +4,9 @@ const axios = require('axios');
 let prices = {
     BTC: 45000.00,
     ETH: 3000.00,
-    USDT: 1.00
+    USDT: 1.00,
+    BNB: 350.00,
+    TRX: 0.12
 };
 
 const getPrices = async () => {
@@ -13,6 +15,8 @@ const getPrices = async () => {
 
     prices.BTC = prices.BTC * (1 + (Math.random() * volatility - volatility / 2));
     prices.ETH = prices.ETH * (1 + (Math.random() * volatility - volatility / 2));
+    prices.BNB = prices.BNB * (1 + (Math.random() * volatility - volatility / 2));
+    prices.TRX = prices.TRX * (1 + (Math.random() * volatility - volatility / 2));
 
     return prices;
 };

@@ -33,6 +33,8 @@ enum Currency {
   USDT
   BTC
   ETH
+  TRX
+  BNB
 }
 
 enum KycStatus {

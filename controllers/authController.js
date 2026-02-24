@@ -53,7 +53,9 @@ const registerUser = async (req, res) => {
             data: [
                 { user_id: user.id, currency: 'USDT', balance: 0.0 },
                 { user_id: user.id, currency: 'BTC', balance: 0.0 },
-                { user_id: user.id, currency: 'ETH', balance: 0.0 }
+                { user_id: user.id, currency: 'ETH', balance: 0.0 },
+                { user_id: user.id, currency: 'TRX', balance: 0.0 },
+                { user_id: user.id, currency: 'BNB', balance: 0.0 }
             ]
         });
 

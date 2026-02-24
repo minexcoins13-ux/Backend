@@ -1,5 +1,7 @@
 const nodemailer = require('nodemailer');
 
+console.log('--- sendEmail.js loaded ---');
+
 const sendWelcomeEmail = async (email, name) => {
     try {
         const transporter = nodemailer.createTransport({
@@ -28,11 +30,14 @@ const sendWelcomeEmail = async (email, name) => {
             `
         };
 
+        console.log('Attempting to send mail to:', email);
         const info = await transporter.sendMail(mailOptions);
-        console.log('Welcome email sent: ' + info.response);
+        console.log('Welcome email successfully sent to', email);
+        console.log('Response:', info.response);
         return true;
     } catch (error) {
-        console.error('Error sending welcome email:', error);
+        console.error('CRITICAL Error sending welcome email in sendEmail.js:');
+        console.error(error);
         return false;
     }
 };
