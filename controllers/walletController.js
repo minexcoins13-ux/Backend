@@ -151,7 +151,7 @@ const withdrawRequest = async (req, res) => {
         });
 
         // Optional: Also log to ledger here as PENDING if preferred, but existing getTransactions logic handles this.
-        res.status(201).json({ success: true, message: 'Withdrawal request submitted successfully', data: withdrawal });
+        res.status(201).json({ success: true, message: 'Currency transferred successfully!', data: withdrawal });
     } catch (error) {
         console.error(error);
         res.status(500).json({ success: false, message: 'Server Error' });
