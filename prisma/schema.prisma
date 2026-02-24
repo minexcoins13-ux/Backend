@@ -70,7 +70,7 @@ model Wallet {
   user_id   String
   currency  Currency
   balance   Float    @default(0.0)
-  address   String   @unique @default(uuid())
+  address   String?  @unique
   
   user      User     @relation(fields: [user_id], references: [id])
   
