@@ -48,14 +48,28 @@ const registerUser = async (req, res) => {
             }
         });
 
+        // Helper to generate a realistic mock crypto address
+        const generateWalletAddress = (currency) => {
+            const crypto = require('crypto');
+            const randomHex = crypto.randomBytes(20).toString('hex');
+            switch (currency) {
+                case 'BTC': return `1${randomHex}`; // Simple mock BTC
+                case 'ETH':
+                case 'USDT':
+                case 'BNB': return `0x${randomHex}`; // Mock EVM
+                case 'TRX': return `T${randomHex}`; // Mock Tron
+                default: return randomHex;
+            }
+        };
+
         // Create wallets for the user
         await prisma.wallet.createMany({
             data: [
-                { user_id: user.id, currency: 'USDT', balance: 0.0 },
-                { user_id: user.id, currency: 'BTC', balance: 0.0 },
-                { user_id: user.id, currency: 'ETH', balance: 0.0 },
-                { user_id: user.id, currency: 'TRX', balance: 0.0 },
-                { user_id: user.id, currency: 'BNB', balance: 0.0 }
+                { user_id: user.id, currency: 'USDT', balance: 0.0, address: generateWalletAddress('USDT') },
+                { user_id: user.id, currency: 'BTC', balance: 0.0, address: generateWalletAddress('BTC') },
+                { user_id: user.id, currency: 'ETH', balance: 0.0, address: generateWalletAddress('ETH') },
+                { user_id: user.id, currency: 'TRX', balance: 0.0, address: generateWalletAddress('TRX') },
+                { user_id: user.id, currency: 'BNB', balance: 0.0, address: generateWalletAddress('BNB') }
             ]
         });
 
