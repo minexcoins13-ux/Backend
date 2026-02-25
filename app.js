@@ -58,6 +58,7 @@ app.use('/api/wallet', require('./routes/walletRoutes'));
 app.use('/api/trade', require('./routes/tradeRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/kyc', require('./routes/kycRoutes'));
+app.use('/api/contact', require('./routes/contactRoutes'));
 
 app.get('/', (req, res) => {
     res.json({ message: 'Welcome to MINEXCOINS API', status: 'Running' });

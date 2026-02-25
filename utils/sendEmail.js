@@ -42,4 +42,45 @@ const sendWelcomeEmail = async (email, name) => {
     }
 };
 
-module.exports = { sendWelcomeEmail };
+const sendContactEmail = async ({ firstName, lastName, email, subject, message }) => {
+    try {
+        const transporter = nodemailer.createTransport({
+            host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+            port: process.env.EMAIL_PORT || 465,
+            secure: process.env.EMAIL_SECURE !== 'false',
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS
+            }
+        });
+
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: 'support@minexcoins.com',
+            replyTo: email,
+            subject: `Contact Form: ${subject} - from ${firstName} ${lastName}`,
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h2 style="color: #2c3e50;">New Contact Form Submission</h2>
+                    <p><strong>Name:</strong> ${firstName} ${lastName}</p>
+                    <p><strong>Email:</strong> ${email}</p>
+                    <p><strong>Subject:</strong> ${subject}</p>
+                    <hr />
+                    <p><strong>Message:</strong></p>
+                    <p style="white-space: pre-wrap;">${message}</p>
+                </div>
+            `
+        };
+
+        const info = await transporter.sendMail(mailOptions);
+        console.log('Contact email successfully sent to support@minexcoins.com');
+        console.log('Response:', info.response);
+        return true;
+    } catch (error) {
+        console.error('CRITICAL Error sending contact email in sendEmail.js:');
+        console.error(error);
+        return false;
+    }
+};
+
+module.exports = { sendWelcomeEmail, sendContactEmail };
