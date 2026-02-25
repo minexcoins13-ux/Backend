@@ -12,6 +12,9 @@ dotenv.config();
 // Create Express app
 const app = express();
 
+// Serve static directory for uploads
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // Middleware
 app.use(helmet()); // Security headers
 app.use(express.json()); // Parse JSON bodies
@@ -54,6 +57,7 @@ app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/wallet', require('./routes/walletRoutes'));
 app.use('/api/trade', require('./routes/tradeRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
+app.use('/api/kyc', require('./routes/kycRoutes'));
 
 app.get('/', (req, res) => {
     res.json({ message: 'Welcome to MINEXCOINS API', status: 'Running' });

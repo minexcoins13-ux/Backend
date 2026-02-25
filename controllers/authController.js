@@ -151,7 +151,8 @@ const getUserProfile = async (req, res) => {
             status: true,
             referral_code: true,
             referred_by: true,
-            created_at: true
+            created_at: true,
+            kyc: true // Include KYC data
         }
     });
 
