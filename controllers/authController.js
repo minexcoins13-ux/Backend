@@ -202,4 +202,46 @@ const updateBankDetails = async (req, res) => {
     }
 };
 
-module.exports = { registerUser, loginUser, getUserProfile, updateBankDetails };
+// @desc    Change user password
+// @route   PUT /api/auth/password
+// @access  Private
+const changePassword = async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({ success: false, message: 'Please provide both current and new password' });
+        }
+
+        const user = await prisma.user.findUnique({
+            where: { id: req.user.id }
+        });
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) {
+            return res.status(401).json({ success: false, message: 'Incorrect current password' });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+        await prisma.user.update({
+            where: { id: req.user.id },
+            data: { password: hashedPassword }
+        });
+
+        res.json({
+            success: true,
+            message: 'Password updated successfully'
+        });
+    } catch (error) {
+        console.error('Change Password Error:', error);
+        res.status(500).json({ success: false, message: 'Failed to update password' });
+    }
+};
+
+module.exports = { registerUser, loginUser, getUserProfile, updateBankDetails, changePassword };
