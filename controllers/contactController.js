@@ -11,13 +11,13 @@ const submitContactForm = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Please fill all fields' });
         }
 
-        const emailSent = await sendContactEmail({ firstName, lastName, email, subject, message });
+        // Send email asynchronously to prevent long request times blocking the frontend
+        sendContactEmail({ firstName, lastName, email, subject, message }).catch(err => {
+            console.error('Failed to send contact email in background:', err);
+        });
 
-        if (emailSent) {
-            res.status(200).json({ success: true, message: 'Message sent successfully' });
-        } else {
-            res.status(500).json({ success: false, message: 'Failed to send message' });
-        }
+        // Immediately respond to the client
+        res.status(200).json({ success: true, message: 'Message sent successfully' });
     } catch (error) {
         console.error('Contact Form Error:', error);
         res.status(500).json({ success: false, message: 'Server Error', error: error.message });
