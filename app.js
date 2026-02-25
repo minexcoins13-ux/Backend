@@ -5,6 +5,7 @@ const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const dotenv = require('dotenv');
 const path = require('path');
+const prisma = require('./utils/prisma');
 
 // Load env vars
 dotenv.config();
@@ -60,8 +61,15 @@ app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/kyc', require('./routes/kycRoutes'));
 app.use('/api/contact', require('./routes/contactRoutes'));
 
-app.get('/', (req, res) => {
-    res.json({ message: 'Welcome to MINEXCOINS API', status: 'Running' });
+app.get('/', async (req, res) => {
+    try {
+        // Ping the database to keep Neon active
+        await prisma.$queryRaw`SELECT 1`;
+        res.json({ message: 'Welcome to MINEXCOINS API', status: 'Running', database: 'Connected' });
+    } catch (error) {
+        console.error('Database ping failed:', error);
+        res.status(500).json({ message: 'Welcome to MINEXCOINS API', status: 'Running', database: 'Disconnected' });
+    }
 });
 
 // Error handling middleware
