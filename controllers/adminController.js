@@ -235,4 +235,84 @@ const updateUserStatus = async (req, res) => {
     }
 };
 
-module.exports = { getAllUsers, getPendingDeposits, approveDeposit, deleteDeposit, updateUserStatus };
+const getPendingKyc = async (req, res) => {
+    try {
+        const kycRequests = await prisma.kYC.findMany({
+            where: { status: 'PENDING' },
+            include: { user: { select: { name: true, email: true } } },
+            orderBy: { submitted_at: 'desc' }
+        });
+        res.json({ success: true, data: kycRequests });
+    } catch (error) {
+        console.error('Fetch Pending KYC Error:', error);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
+const approveKyc = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const kyc = await prisma.kYC.findUnique({ where: { id } });
+
+        if (!kyc) {
+            return res.status(404).json({ success: false, message: 'KYC request not found' });
+        }
+
+        if (kyc.status !== 'PENDING') {
+            return res.status(400).json({ success: false, message: `KYC is already ${kyc.status}` });
+        }
+
+        const updatedKyc = await prisma.kYC.update({
+            where: { id },
+            data: { status: 'APPROVED', reviewed_at: new Date() }
+        });
+
+        res.json({ success: true, message: 'KYC approved successfully', data: updatedKyc });
+    } catch (error) {
+        console.error('Approve KYC Error:', error);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
+const rejectKyc = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { admin_note } = req.body;
+
+        const kyc = await prisma.kYC.findUnique({ where: { id } });
+
+        if (!kyc) {
+            return res.status(404).json({ success: false, message: 'KYC request not found' });
+        }
+
+        if (kyc.status !== 'PENDING') {
+            return res.status(400).json({ success: false, message: `KYC is already ${kyc.status}` });
+        }
+
+        const updatedKyc = await prisma.kYC.update({
+            where: { id },
+            data: {
+                status: 'REJECTED',
+                reviewed_at: new Date(),
+                admin_note: admin_note || null
+            }
+        });
+
+        res.json({ success: true, message: 'KYC rejected', data: updatedKyc });
+    } catch (error) {
+        console.error('Reject KYC Error:', error);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
+module.exports = {
+    getAllUsers,
+    getPendingDeposits,
+    approveDeposit,
+    deleteDeposit,
+    updateUserStatus,
+    getPendingKyc,
+    approveKyc,
+    rejectKyc
+};
