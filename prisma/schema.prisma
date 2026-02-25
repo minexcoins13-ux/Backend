@@ -55,6 +55,11 @@ model User {
   created_at    DateTime  @default(now())
   updated_at    DateTime  @updatedAt
 
+  bank_name      String?
+  account_name   String?
+  account_number String?
+  ifsc_code      String?
+
   wallet        Wallet[]
   deposits      Deposit[]
   withdrawals   Withdrawal[]

@@ -152,7 +152,11 @@ const getUserProfile = async (req, res) => {
             referral_code: true,
             referred_by: true,
             created_at: true,
-            kyc: true // Include KYC data
+            kyc: true, // Include KYC data
+            bank_name: true,
+            account_name: true,
+            account_number: true,
+            ifsc_code: true
         }
     });
 
@@ -163,4 +167,39 @@ const getUserProfile = async (req, res) => {
     }
 };
 
-module.exports = { registerUser, loginUser, getUserProfile };
+// @desc    Update bank details
+// @route   PUT /api/auth/bank
+// @access  Private
+const updateBankDetails = async (req, res) => {
+    try {
+        const { bank_name, account_name, account_number, ifsc_code } = req.body;
+
+        const updatedUser = await prisma.user.update({
+            where: { id: req.user.id },
+            data: {
+                bank_name,
+                account_name,
+                account_number,
+                ifsc_code
+            },
+            select: {
+                id: true,
+                bank_name: true,
+                account_name: true,
+                account_number: true,
+                ifsc_code: true
+            }
+        });
+
+        res.json({
+            success: true,
+            message: 'Bank details updated successfully',
+            data: updatedUser
+        });
+    } catch (error) {
+        console.error('Update Bank Details Error:', error);
+        res.status(500).json({ success: false, message: 'Failed to update bank details' });
+    }
+};
+
+module.exports = { registerUser, loginUser, getUserProfile, updateBankDetails };
