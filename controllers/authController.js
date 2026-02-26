@@ -76,10 +76,14 @@ const registerUser = async (req, res) => {
             ]
         });
 
-        // Send Welcome Email in the background so it doesn't delay/block registration response
-        sendWelcomeEmail(user.email, user.name).catch(err => {
-            console.error('Background welcome email error:', err);
-        });
+        // Send Welcome Email
+        try {
+            console.log('Sending Standard Register Welcome Email to:', user.email);
+            const emailSent = await sendWelcomeEmail(user.email, user.name);
+            console.log('Welcome email result:', emailSent);
+        } catch (err) {
+            console.error('Welcome email error:', err);
+        }
 
         res.status(201).json({
             success: true,
@@ -353,9 +357,13 @@ const googleAuth = async (req, res) => {
         });
 
         // Send Welcome Email
-        sendWelcomeEmail(user.email, user.name).catch(err => {
-            console.error('Background welcome email error:', err);
-        });
+        try {
+            console.log('Sending Google Auth Welcome Email to:', user.email);
+            const emailSent = await sendWelcomeEmail(user.email, user.name);
+            console.log('Welcome email result:', emailSent);
+        } catch (err) {
+            console.error('Welcome email error:', err);
+        }
 
         // Return login response
         return res.status(201).json({
