@@ -14,11 +14,58 @@ const getAllUsers = async (req, res) => {
                 status: true,
                 created_at: true,
                 wallet: true
+            },
+            orderBy: {
+                created_at: 'desc'
             }
         });
         res.json({ success: true, data: users });
     } catch (error) {
         console.error(error);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
+// @desc    Delete user
+// @route   DELETE /api/admin/users/:id
+// @access  Private/Admin
+const deleteUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const user = await prisma.user.findUnique({ where: { id } });
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        if (user.role === 'ADMIN') {
+            return res.status(403).json({ success: false, message: 'Cannot delete an Admin user' });
+        }
+
+        // Use Prisma $transaction to perform manual cascading delete of associated records
+        await prisma.$transaction([
+            prisma.wallet.deleteMany({ where: { user_id: id } }),
+            prisma.deposit.deleteMany({ where: { user_id: id } }),
+            prisma.withdrawal.deleteMany({ where: { user_id: id } }),
+            prisma.transactionLedger.deleteMany({ where: { user_id: id } }),
+            prisma.trade.deleteMany({ where: { user_id: id } }),
+            prisma.referralCommission.deleteMany({
+                where: {
+                    OR: [
+                        { user_id: id },
+                        { referrer_id: id }
+                    ]
+                }
+            }),
+            prisma.investment.deleteMany({ where: { user_id: id } }),
+            prisma.kYC.deleteMany({ where: { user_id: id } }),
+            prisma.user.delete({ where: { id } })
+        ]);
+
+        res.json({ success: true, message: 'User and all associated records deleted successfully' });
+    } catch (error) {
+        console.error('Delete User Error:', error);
         res.status(500).json({ success: false, message: 'Server Error' });
     }
 };
@@ -308,6 +355,7 @@ const rejectKyc = async (req, res) => {
 
 module.exports = {
     getAllUsers,
+    deleteUser,
     getPendingDeposits,
     approveDeposit,
     deleteDeposit,
