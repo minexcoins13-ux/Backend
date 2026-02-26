@@ -47,7 +47,8 @@ model User {
   id            String    @id @default(uuid())
   name          String
   email         String    @unique
-  password      String
+  password      String?
+  google_id     String?   @unique
   role          Role      @default(USER)
   status        Status    @default(ACTIVE)
   referral_code String    @unique

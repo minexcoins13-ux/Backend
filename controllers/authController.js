@@ -3,6 +3,9 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { generateToken, generateRefreshToken, generateReferralCode } = require('../utils/generateToken');
 const { sendWelcomeEmail } = require('../utils/sendEmail');
+const { OAuth2Client } = require('google-auth-library');
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // @desc    Register a new user
 // @route   POST /api/auth/register
@@ -244,4 +247,133 @@ const changePassword = async (req, res) => {
     }
 };
 
-module.exports = { registerUser, loginUser, getUserProfile, updateBankDetails, changePassword };
+// @desc    Auth user with Google
+// @route   POST /api/auth/google
+// @access  Public
+const googleAuth = async (req, res) => {
+    try {
+        const { credential, referral_code } = req.body;
+
+        if (!credential) {
+            return res.status(400).json({ success: false, message: 'Google credential missing' });
+        }
+
+        // Verify Google token
+        const ticket = await client.verifyIdToken({
+            idToken: credential,
+            // Optional: audience: process.env.GOOGLE_CLIENT_ID
+        });
+        const payload = ticket.getPayload();
+
+        if (!payload) {
+            return res.status(400).json({ success: false, message: 'Invalid Google token' });
+        }
+
+        const { email, name, sub: google_id } = payload;
+
+        // Check if user exists
+        let user = await prisma.user.findUnique({
+            where: { email }
+        });
+
+        if (user) {
+            // User exists: Ensure account is not blocked
+            if (user.status === 'BLOCKED') {
+                return res.status(403).json({ success: false, message: 'Account is blocked' });
+            }
+
+            // Link Google account if not linked
+            if (!user.google_id) {
+                user = await prisma.user.update({
+                    where: { email },
+                    data: { google_id }
+                });
+            }
+
+            // Return login token
+            return res.json({
+                success: true,
+                data: {
+                    id: user.id,
+                    name: user.name,
+                    email: user.email,
+                    role: user.role,
+                    token: generateToken(user.id),
+                    refreshToken: generateRefreshToken(user.id)
+                }
+            });
+        }
+
+        // User does not exist: Register them automatically
+        const newReferralCode = generateReferralCode(name);
+        let referrerId = null;
+        if (referral_code) {
+            const referrer = await prisma.user.findUnique({
+                where: { referral_code }
+            });
+            if (referrer) {
+                referrerId = referrer.id;
+            }
+        }
+
+        user = await prisma.user.create({
+            data: {
+                name,
+                email,
+                google_id,
+                referral_code: newReferralCode,
+                referred_by: referrerId ? referral_code : null
+                // password is left null as they signed in via Google
+            }
+        });
+
+        // Helper to generate a realistic mock crypto address
+        const generateWalletAddress = (currency) => {
+            const crypto = require('crypto');
+            const randomHex = crypto.randomBytes(20).toString('hex');
+            switch (currency) {
+                case 'BTC': return `1${randomHex}`; // Simple mock BTC
+                case 'ETH':
+                case 'USDT':
+                case 'BNB': return `0x${randomHex}`; // Mock EVM
+                case 'TRX': return `T${randomHex}`; // Mock Tron
+                default: return randomHex;
+            }
+        };
+
+        // Create wallets for the user
+        await prisma.wallet.createMany({
+            data: [
+                { user_id: user.id, currency: 'USDT', balance: 0.0, address: generateWalletAddress('USDT') },
+                { user_id: user.id, currency: 'BTC', balance: 0.0, address: generateWalletAddress('BTC') },
+                { user_id: user.id, currency: 'ETH', balance: 0.0, address: generateWalletAddress('ETH') },
+                { user_id: user.id, currency: 'TRX', balance: 0.0, address: generateWalletAddress('TRX') },
+                { user_id: user.id, currency: 'BNB', balance: 0.0, address: generateWalletAddress('BNB') }
+            ]
+        });
+
+        // Send Welcome Email
+        sendWelcomeEmail(user.email, user.name).catch(err => {
+            console.error('Background welcome email error:', err);
+        });
+
+        // Return login response
+        return res.status(201).json({
+            success: true,
+            data: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                token: generateToken(user.id),
+                refreshToken: generateRefreshToken(user.id)
+            }
+        });
+
+    } catch (error) {
+        console.error('Google Auth Error:', error);
+        res.status(500).json({ success: false, message: 'Server Error', error: error.message });
+    }
+};
+
+module.exports = { registerUser, loginUser, getUserProfile, updateBankDetails, changePassword, googleAuth };
